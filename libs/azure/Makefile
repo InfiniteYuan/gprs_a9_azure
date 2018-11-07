@@ -17,7 +17,20 @@ LOCAL_API_DEPENDS := \
 
 
 # include folder
-LOCAL_ADD_INCLUDE := \
+LOCAL_ADD_INCLUDE := include \
+                    include/std_inc \
+                    include/api_inc \
+					libs/azure/platform \
+					libs/azure/platform/include \
+					libs/azure/azure-iot-sdk-c/c-utility/inc \
+					libs/azure/azure-iot-sdk-c/c-utility/inc/azure_c_shared_utility \
+					libs/azure/azure-iot-sdk-c/c-utility/pal/inc \
+					libs/azure/azure-iot-sdk-c/c-utility/pal/generic \
+					libs/azure/azure-iot-sdk-c/iothub_client/inc \
+					libs/azure/azure-iot-sdk-c/serializer/inc \
+					libs/azure/azure-iot-sdk-c/umqtt/inc \
+					libs/azure/azure-iot-sdk-c/umqtt/inc/azure_umqtt_c \
+					libs/azure/azure-iot-sdk-c/deps/parson 
 
 
                     
@@ -34,6 +47,14 @@ MYCFLAGS +=
 ## ------------------------------------- ##
 S_SRC := ${notdir ${wildcard src/*.s}}
 C_SRC := ${notdir ${wildcard src/*.c}}
+C_SRC_FILES +=  ${wildcard platform/src/*.c} \
+				${wildcard azure-iot-sdk-c/c-utility/pal/*.c} \
+				${wildcard azure-iot-sdk-c/c-utility/src/*.c} \
+				${wildcard azure-iot-sdk-c/c-utility/adapters/*.c} \
+				${wildcard azure-iot-sdk-c/umqtt/src/*.c} \
+				${wildcard azure-iot-sdk-c/iothub_client/src/*.c} \
+				${wildcard azure-iot-sdk-c/serializer/src/*.c} \
+				${wildcard azure-iot-sdk-c/deps/parson/*.c}
 
 AZURE_PATH = $(SOFT_WORKDIR)/libs/azure/azure-iot-sdk-c
 AZURE_LIB_PATH = $(AZURE_PATH)/output/release/lib

@@ -30,7 +30,7 @@ LOCAL_ADD_INCLUDE := include \
 					libs/azure/azure-iot-sdk-c/serializer/inc \
 					libs/azure/azure-iot-sdk-c/umqtt/inc \
 					libs/azure/azure-iot-sdk-c/umqtt/inc/azure_umqtt_c \
-					libs/azure/azure-iot-sdk-c/deps/parson \
+					libs/azure/azure-iot-sdk-c/deps/parson 
 
 
                     

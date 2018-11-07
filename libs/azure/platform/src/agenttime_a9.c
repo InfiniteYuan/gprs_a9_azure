@@ -23,13 +23,11 @@ time_t sntp_get_current_timestamp()
         Trace(1, "timestamp:%d Time: %s", timeNow, ctime( ( const time_t * ) &timeNow ));
     }
     return timeNow;
-
 }
 
 time_t get_time(time_t *currentTime)
 {
     return sntp_get_current_timestamp();
-
 }
 
 double get_difftime(time_t stopTime, time_t startTime)

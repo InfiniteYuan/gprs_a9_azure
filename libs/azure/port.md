@@ -62,7 +62,7 @@ Tickcounter行为在tickcounter规范中指定。
 
 如果内存大小是个问题，则tickcounter规范包含可能适合您的优化建议。
 
-## 代理时间适配器
+## agenttime适配器
 agenttime适配器在agenttime适配器规范中指定，并提供与平台无关的时间函数。
 
 对于大多数平台/操作系统，您可以在构建中包含标准的agenttime.c文件。 这个适配器只调用C函数time，difftime，ctime等。
@@ -71,20 +71,39 @@ agenttime适配器在agenttime适配器规范中指定，并提供与平台无�
 
 Azure IoT SDK仅需要get_time和get_difftime函数。 此适配器中的其他函数 - get_gmtime，get_mktime和get_ctime - 已弃用，可能会被省略或不起作用。
 
-## 睡眠适配器
+## sleep适配器
 睡眠适配器是一个单一功能，提供与设备无关的线程休眠。 与其他适配器不同，它没有自己的头文件。 相反，它的声明包含在threadapi.h文件中，同时包含可选的threadapi适配器的声明，其实现通常包含在关联的threadapi.c文件中。
 
 但是，与threadapi.h中的其他函数不同，SDK需要ThreadAPI_Sleep，并且必须始终可以正常运行。
 
 睡眠适配器的规范可在threadapi和sleep adapter规范中找到。
 
-## 平台适配器
+## platform适配器
 平台适配器为平台执行一次初始化和取消初始化，并为SDK提供适当的TLSIO。
 
 平台适配器规范提供了编写平台适配器的完整说明。
 
 要开始创建平台适配器，请复制此Windows platform.c文件并根据需要进行修改。
 
+## threadapi和lock适配器
+必须存在用于SDK编译的threadapi和lock适配器，但它们的功能是可选的。他们的规范文档（见下文）详细说明了如果不需要线程功能，每个空函数应该做什么。
+
+这些组件允许SDK在专用线程内与IoT Hub通信。由于需要单独的堆栈，使用专用线程在内存消耗方面有一些成本，这可能使专用线程难以在具有很少空闲内存的设备上使用。
+
+专用线程的优点是当网络不可用时，所有当前的tlsio适配器在尝试连接到其IoT Hub时可能会重复阻塞一段时间，并且拥有专用于Azure IoT SDK的线程将允许其他设备功能在SDK被阻止时保持响应。
+
+SDK的未来版本可能会消除这种潜在的阻塞行为，但是目前，必须响应的设备需要为SDK使用专用线程，这需要实现ThreadApi和Lock适配器。
+
+以下是threadapi和锁适配器的规范：
+
+threadapi和睡眠适配器规范
+锁适配器规范
+这些规范解释了如何在不需要线程时创建null lock和threadapi适配器。
+
+要开始创建threadapi和锁适配器，请复制这些Windows适配器文件并对其进行适当修改：
+
+threadapi.c
+lock.c
 
 ## tlsio适配器概述
 tlsio适配器为SDK提供与Azure IoT Hub的安全TLS通信。
@@ -102,9 +121,51 @@ tlsio适配器有两种可能的设计模式：直接和链接。在直接样式
 
 TLS实现的选择可能决定了tlsio的风格。例如，针对ESP32的Arduino和Espressif的OpenSSL实现的TLS实现只能直接使用它们自己的内部TCP套接字，因此它们只能用作直接样式tlsio的一部分。相比之下，OpenSSL的完整官方版本可以使用任何一种方式。
 
+## socketio适配器概述
+为了连接到互联网，链接的tlsio必须在某个时候通过包含TCP套接字的xio适配器进行通信。 在Azure IoT SDK中，管理TCP套接字的xio适配器称为socketio适配器。
+
+如果需要，可以将多个xio组件链接在一起。 下面的图表说明了直接tlsio，链式tlsio和带有基于xio的http代理组件的链式tlsio之间的区别：
+
+仅显示xio_http_proxy组件以说明xio功能。 其详细信息超出了本文档的范围。
+
 ## tlsio适配器实现
 tlsio以外的适配器易于实现，即使对于没有经验的开发人员也是如此。 然而，tlsio适配器非常复杂，编写tlsio适配器只是经验丰富的开发人员的任务，他们很乐意在没有指令的情况下设置包含目录和外部库。
 
 有关tlsio实现的最新信息包含在tlsio规范中。
 
 所有现有的tlsio适配器都使用不属于Azure IoT SDK的TLS库。 有关库使用的说明，请参阅特定TSL库的文档，例如设置包含目录和链接库文件。
+
+## 现有的直接tlsio实现
+现有两个直接适配器实现：
+
+ESP32的tlsio_openssl_compact
+tlsio_arduino为Arduino
+在这两个中，ESP32的tlsio_openssl_compact可能是复制用于重用的更好的候选者，因为它更可能类似于更新的设备，并且它与tlsio规范一起编写。
+
+ESP32的tlsio_openssl_compact使用这两个文件抽象其操作系统依赖项：
+
+socket_async.c
+dns_async.c
+建议所有直接tlsio实现都遵循这种模式。
+
+socket_async.c和dns_async.c文件只需更改包含os特定标头的“socket_async_os.h”文件的内容，就可以在不更改大多数套接字实现的情况下重复使用。
+
+## 现有的链式tlsio实现
+链式适配器实现包括：
+
+适用于Windows，Linux和Mac的tlsio_openssl
+tlsio_schannel仅适用于Windows
+tlsio_wolfssl用于嵌入式设备
+tlsio_cyclonessl用于嵌入式设备
+tlsio_mbedtls为mbed
+
+## 链式tlsio适配器的现有socketio实现
+socketio适配器没有规范，因此有必要复制现有的行为，而socketio_berkeley是复制的最佳选择。但是，请注意所有现有的socketio适配器（包括socketio_berkeley）在socketio_destroy期间清除其挂起的io列表，这是不正确的。应该在socketio_close期间清除挂起的io列表。
+
+适用于Linux的socketio_berkeley，可轻松适应任何Berkeley套接字
+适用于Windows的socketio_win32
+socketio_mbed为mbed
+tlsio_cyclonessl_socket用于cyclonessl
+
+## 添加设备支持存储库
+新支持的设备可能使用各种可能的构建系统，因此不能规定单个标准源树。 我们建议将ESP32的支持存储库作为创建新设备支持存储库的模型。
