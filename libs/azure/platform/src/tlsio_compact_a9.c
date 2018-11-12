@@ -18,6 +18,7 @@
 #include "azure_c_shared_utility/agenttime.h"
 #include "azure_c_shared_utility/singlylinkedlist.h"
 #include "azure_c_shared_utility/crt_abstractions.h"
+#include "azure_c_shared_utility/shared_util_options.h"
 #include "azure_c_shared_utility/tlsio_options.h"
 
 #define MAX_VALID_PORT 0xffff
@@ -36,7 +37,7 @@
 
 typedef enum TLSIO_STATE_TAG
 {
-    TLSIO_STATE_OPENING;
+    TLSIO_STATE_OPENING,
     TLSIO_STATE_OPEN,
     TLSIO_STATE_CLOSING,
     TLSIO_STATE_CLOSED,
@@ -47,8 +48,8 @@ typedef enum TLSIO_STATE_TAG
 // this struct, keep it in sync with the one in tlsio_openssl_compact_ut.c
 typedef struct TLS_IO_INSTANCE_TAG
 {
-    ON_IO_OPEN_COMPLETE on_open_complete;
-    void* on_open_complete_context;
+    ON_IO_OPEN_COMPLETE on_io_open_complete;
+    void* on_io_open_complete_context;
 
     ON_BYTES_RECEIVED on_bytes_received;
     void* on_bytes_received_context;
@@ -72,17 +73,21 @@ typedef struct TLS_IO_INSTANCE_TAG
 
 static void tlsio_ssl_Init(TLS_IO_INSTANCE* tls_io_instance)
 {
-    tls_io_instance->config.caCert = tls_io_instance->trusted_certificates;
-    tls_io_instance->config.caCrl  = NULL;
-    tls_io_instance->config.clientCert = NULL;
-    tls_io_instance->config.clientKey  = NULL;
-    tls_io_instance->config.clientKeyPasswd = NULL;
-    tls_io_instance->config.hostName   = tls_io_instance->hostname;
-    tls_io_instance->config.minVersion = SSL_VERSION_TLSv1_2;
-    tls_io_instance->config.maxVersion = SSL_VERSION_TLSv1_2;
-    tls_io_instance->config.verifyMode = SSL_VERIFY_MODE_REQUIRED;
-    tls_io_instance->config.entropyCustom = "GPRS_AZURE";
+    tls_io_instance->config->caCert = tls_io_instance->trusted_certificates;
+    tls_io_instance->config->caCrl  = NULL;
+    tls_io_instance->config->clientCert = NULL;
+    tls_io_instance->config->clientKey  = NULL;
+    tls_io_instance->config->clientKeyPasswd = NULL;
+    tls_io_instance->config->hostName   = tls_io_instance->hostname;
+    tls_io_instance->config->minVersion = SSL_VERSION_TLSv1_2;
+    tls_io_instance->config->maxVersion = SSL_VERSION_TLSv1_2;
+    tls_io_instance->config->verifyMode = SSL_VERIFY_MODE_REQUIRED;
+    tls_io_instance->config->entropyCustom = "GPRS_AZURE";
 }
+
+static int tlsio_ssl_setoption(CONCRETE_IO_HANDLE tlsio_handle, const char* optionName, const void* value);
+static void tlsio_ssl_destroy(CONCRETE_IO_HANDLE tlsio_handle);
+static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle);
 
 /* Codes_SRS_TLSIO_OPENSSL_COMPACT_30_560: [ The  tlsio_retrieveoptions  shall do nothing and return an empty options handler. ]*/
 static OPTIONHANDLER_HANDLE tlsio_ssl_retrieveoptions(CONCRETE_IO_HANDLE tlsio_handle)
@@ -97,7 +102,7 @@ static OPTIONHANDLER_HANDLE tlsio_ssl_retrieveoptions(CONCRETE_IO_HANDLE tlsio_h
     }
     else
     {
-        result = tlsio_options_retrieve_options(&tls_io_instance->options, tlsio_openssl_setoption);
+        result = tlsio_options_retrieve_options(&tls_io_instance->options, tlsio_ssl_setoption);
     }
     return result;
 }
@@ -152,7 +157,7 @@ static CONCRETE_IO_HANDLE tlsio_ssl_create(void* io_create_parameters)
             if (ret != 0) {
                 /* Codes_SRS_TLSIO_30_011: [ If any resource allocation fails, tlsio_create shall return NULL. ]*/
                 LogError("There is not enough memory to create tls_io_instance->hostname.");
-                tlsio_openssl_destroy(tls_io_instance);
+                tlsio_ssl_destroy(tls_io_instance);
                 tls_io_instance = NULL;
             } else {
                 itoa(tls_io_config->port, port_str, 10);
@@ -160,10 +165,10 @@ static CONCRETE_IO_HANDLE tlsio_ssl_create(void* io_create_parameters)
                 if(ret != 0) {
                     /* Codes_SRS_TLSIO_30_011: [ If any resource allocation fails, tlsio_create shall return NULL. ]*/
                     LogError("There is not enough memory to create tls_io_instance->port.");
-                    tlsio_openssl_destroy(tls_io_instance);
+                    tlsio_ssl_destroy(tls_io_instance);
                     tls_io_instance = NULL;
                 } else {
-                    tlsio_ssl_Init(tls_io_instance;);
+                    tlsio_ssl_Init(tls_io_instance);
                 }
             }
         }
@@ -228,10 +233,10 @@ static int tlsio_ssl_open(CONCRETE_IO_HANDLE tlsio_handle,
         tls_io_instance->on_io_error = on_io_error;
         tls_io_instance->on_io_error_context = on_io_error_context;
 
-        tls_io_instance->on_open_complete = on_io_open_complete;
-        tls_io_instance->on_open_complete_context = on_io_open_complete_context;
+        tls_io_instance->on_io_open_complete = on_io_open_complete;
+        tls_io_instance->on_io_open_complete_context = on_io_open_complete_context;
 
-        if (tls_io_instance->state != TLSIO_STATE_CLOSED)
+        if (tls_io_instance->tlsio_state != TLSIO_STATE_CLOSED)
         {
             /* Codes_SRS_TLSIO_30_037: [ If the adapter is in any state other than TLSIO_STATE_EXT_CLOSED when tlsio_open  is called, it shall log an error, and return FAILURE. ]*/
             LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_CLOSED.");
@@ -243,7 +248,7 @@ static int tlsio_ssl_open(CONCRETE_IO_HANDLE tlsio_handle,
             tls_io_instance->tlsio_state = TLSIO_STATE_OPENING;
             tls_io_instance->countTry = MAX_TLS_OPENING_RETRY;
             // All the real work happens in dowork
-            tlsio_arduino_dowork(tlsio_handle);
+            tlsio_ssl_dowork(tlsio_handle);
             result = 0;
         }
         /* Codes_SRS_TLSIO_30_039: [ On failure, tlsio_open_async shall not call on_io_open_complete. ]*/
@@ -265,14 +270,14 @@ static int tlsio_ssl_open(CONCRETE_IO_HANDLE tlsio_handle,
     }
     else
     {
-        /* Codes_SRS_TLSIO_ARDUINO_21_041: [ If the tlsio_arduino_open get success opening the tls connection, it shall call the tlsio_arduino_dowork. ]*/
-        tlsio_arduino_dowork(tlsio_handle);
+        /* Codes_SRS_TLSIO_ARDUINO_21_041: [ If the tlsio_arduino_open get success opening the tls connection, it shall call the tlsio_ssl_dowork. ]*/
+        tlsio_ssl_dowork(tlsio_handle);
     }
     return result;
 }
 
 // This implementation does not have asynchronous close, but uses the _async name for consistency with the spec
-static int tlsio_ssl_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* callback_context)
+static int tlsio_ssl_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* on_io_close_complete_context)
 {
     int result;
     if (tlsio_handle == NULL)
@@ -290,30 +295,30 @@ static int tlsio_ssl_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE
         /* Codes_SRS_TLSIO_ARDUINO_21_046: [ The tlsio_arduino_close shall store the provided on_io_close_complete_context handle. ]*/
         tls_io_instance->on_io_close_complete_context = on_io_close_complete_context;
 
-        if ((tls_io_instance->state == TLSIO_STATE_CLOSED) || (tls_io_instance->state == TLSIO_STATE_ERROR))
+        if ((tls_io_instance->tlsio_state == TLSIO_STATE_CLOSED) || (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR))
         {
             /* Codes_SRS_TLSIO_30_053: [ If the adapter is in any state other than TLSIO_STATE_EXT_OPEN or TLSIO_STATE_EXT_ERROR then tlsio_close_async shall log that tlsio_close_async has been called and then continue normally. ]*/
             // LogInfo rather than LogError because this is an unusual but not erroneous situation
-            tls_io_instance->state = TLSIO_STATE_CLOSED;
+            tls_io_instance->tlsio_state = TLSIO_STATE_CLOSED;
             result = 0;
         } 
-        else if ((tls_io_instance->state == TLSIO_STATE_OPENING) || (tls_io_instance->state == TLSIO_STATE_CLOSING))
+        else if ((tls_io_instance->tlsio_state == TLSIO_STATE_OPENING) || (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
             /* Codes_SRS_TLSIO_30_057: [ On success, if the adapter is in TLSIO_STATE_EXT_OPENING, it shall call on_io_open_complete with the on_io_open_complete_context supplied in tlsio_open_async and IO_OPEN_CANCELLED. This callback shall be made before changing the internal state of the adapter. ]*/
             LogError("Try to close the connection with an already closed TLS.");
-            tls_io_instance->state = TLSIO_STATE_STATE_ERROR;
+            tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             result = __FAILURE__;
         }
         else
         {
             /* Codes_SRS_TLSIO_30_056: [ On success the adapter shall enter TLSIO_STATE_EX_CLOSING. ]*/
             /* Codes_SRS_TLSIO_30_052: [ On success tlsio_close shall return 0. ]*/
-            tls_io_instance->state = TLSIO_STATE_CLOSING;
+            tls_io_instance->tlsio_state = TLSIO_STATE_CLOSING;
             /* Codes_SRS_TLSIO_ARDUINO_21_044: [ The tlsio_arduino_close shall set the tlsio to try to close the connection for 10 times before assuming that close connection failed. ]*/
             tls_io_instance->countTry = MAX_TLS_CLOSING_RETRY;
             /* Codes_SRS_TLSIO_ARDUINO_21_044: [ The tlsio_arduino_close shall set the tlsio to try to close the connection for 10 times before assuming that close connection failed. ]*/
-            /* Codes_SRS_TLSIO_ARDUINO_21_050: [ If the tlsio_arduino_close get success closing the tls connection, it shall call the tlsio_arduino_dowork. ]*/
-            tlsio_arduino_dowork(tlsio_handle);
+            /* Codes_SRS_TLSIO_ARDUINO_21_050: [ If the tlsio_arduino_close get success closing the tls connection, it shall call the tlsio_ssl_dowork. ]*/
+            tlsio_ssl_dowork(tlsio_handle);
             result = 0;
         }
     }
@@ -322,7 +327,7 @@ static int tlsio_ssl_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE
     return result;
 }
 
-static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* callback_context)
+static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* on_send_complete_context)
 {
     int result;
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tlsio_handle;
@@ -335,7 +340,7 @@ static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, s
         LogError("Invalid parameter");
         result = __FAILURE__;
     }
-    else if (tls_io_instance->state != TLSIO_ARDUINO_STATE_OPEN)
+    else if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
     {
         /* Codes_SRS_TLSIO_ARDUINO_21_058: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_send shall call the on_send_complete with IO_SEND_ERROR, and return _LINE_. ]*/
         LogError("TLS is not ready to send data");
@@ -350,7 +355,8 @@ static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, s
         /* Codes_SRS_TLSIO_ARDUINO_21_055: [ if the ssl was not able to send all data in the buffer, the tlsio_arduino_send shall call the ssl again to send the remaining bytes. ]*/
         while (send_size > 0)
         {
-            send_result = SSL_Write(tls_io_instance->config, runBuffer, send_size, 5000);
+            // int         SSL_Write(SSL_Config_t* sslConfig, uint8_t* data, int length, int timeoutMs);
+            send_result = SSL_Write(tls_io_instance->config, (uint8_t *)runBuffer, (int)send_size, 5000);
 
             if (send_result <= 0) /* Didn't transmit anything! Failed. */
             {
@@ -361,7 +367,7 @@ static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, s
                 if (on_send_complete != NULL)
                 {
                     /* Codes_SRS_TLSIO_ARDUINO_21_003: [ The tlsio_arduino shall report the send operation status using the IO_SEND_RESULT enumerator defined in the `xio.h`. ]*/
-                    on_send_complete(callback_context, IO_SEND_ERROR);
+                    on_send_complete(on_send_complete_context, IO_SEND_ERROR);
                 }
                 send_size = 0;
             }
@@ -373,7 +379,7 @@ static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, s
                 if (on_send_complete != NULL)
                 {
                     /* Codes_SRS_TLSIO_ARDUINO_21_003: [ The tlsio_arduino shall report the send operation status using the IO_SEND_RESULT enumerator defined in the `xio.h`. ]*/
-                    on_send_complete(callback_context, IO_SEND_OK);
+                    on_send_complete(on_send_complete_context, IO_SEND_OK);
                 }
                 result = 0;
                 send_size = 0;
@@ -401,8 +407,8 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
         int received;
         SSL_Error_t error;
         TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tlsio_handle;
-        /* Codes_SRS_TLSIO_ARDUINO_21_075: [ The tlsio_arduino_dowork shall create a buffer to store the data received from the ssl client. ]*/
-        /* Codes_SRS_TLSIO_ARDUINO_21_076: [ The tlsio_arduino_dowork shall delete the buffer to store the data received from the ssl client. ]*/
+        /* Codes_SRS_TLSIO_ARDUINO_21_075: [ The tlsio_ssl_dowork shall create a buffer to store the data received from the ssl client. ]*/
+        /* Codes_SRS_TLSIO_ARDUINO_21_076: [ The tlsio_ssl_dowork shall delete the buffer to store the data received from the ssl client. ]*/
         uint8_t RecvBuffer[RECEIVE_BUFFER_SIZE];
 
         // This switch statement handles all of the state transitions during the opening process
@@ -419,7 +425,7 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
                 } 
                 else 
                 {
-                    /* Codes_SRS_TLSIO_ARDUINO_21_063: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, and ssl client is connected, the tlsio_arduino_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_OPEN, and call the on_io_open_complete with IO_OPEN_OK. ]*/
+                    /* Codes_SRS_TLSIO_ARDUINO_21_063: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, and ssl client is connected, the tlsio_ssl_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_OPEN, and call the on_io_open_complete with IO_OPEN_OK. ]*/
                     tls_io_instance->tlsio_state = TLSIO_STATE_OPEN;
                     /* Codes_SRS_TLSIO_ARDUINO_21_002: [ The tlsio_arduino shall report the open operation status using the IO_OPEN_RESULT enumerator defined in the `xio.h`.]*/
                     CallOpenCallback(IO_OPEN_OK);
@@ -427,8 +433,8 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             } 
             else 
             {
-                /* Codes_SRS_TLSIO_ARDUINO_21_065: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, ssl client is not connected, and the counter to try becomes 0, the tlsio_arduino_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_ERROR, call on_io_open_complete with IO_OPEN_CANCELLED, call on_io_error. ]*/
-                tls_io_instance->state = TLSIO_STATE_ERROR;
+                /* Codes_SRS_TLSIO_ARDUINO_21_065: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, ssl client is not connected, and the counter to try becomes 0, the tlsio_ssl_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_ERROR, call on_io_open_complete with IO_OPEN_CANCELLED, call on_io_error. ]*/
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                 LogError("Timeout for TLS connect.");
                 /* Codes_SRS_TLSIO_ARDUINO_21_002: [ The tlsio_arduino shall report the open operation status using the IO_OPEN_RESULT enumerator defined in the `xio.h`.]*/
                 /* Codes_SRS_TLSIO_ARDUINO_21_042: [ If the tlsio_arduino_open retry to open more than 10 times without success, it shall call the on_io_open_complete with IO_OPEN_CANCELED. ]*/
@@ -437,10 +443,10 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             }
             break;
         case TLSIO_STATE_OPEN:
-            /* Codes_SRS_TLSIO_ARDUINO_21_069: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, the tlsio_arduino_dowork shall read data from the ssl client. ]*/
+            /* Codes_SRS_TLSIO_ARDUINO_21_069: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, the tlsio_ssl_dowork shall read data from the ssl client. ]*/
             while ((received = SSL_Read(tls_io_instance->config, (uint8_t*)RecvBuffer, RECEIVE_BUFFER_SIZE, 5000)) > 0)
             {
-                /* Codes_SRS_TLSIO_ARDUINO_21_070: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, and there are received data in the ssl client, the tlsio_arduino_dowork shall read this data and call the on_bytes_received with the pointer to the buffer with the data. ]*/
+                /* Codes_SRS_TLSIO_ARDUINO_21_070: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPEN, and there are received data in the ssl client, the tlsio_ssl_dowork shall read this data and call the on_bytes_received with the pointer to the buffer with the data. ]*/
                 if (tls_io_instance->on_bytes_received != NULL)
                 {
                     // explictly ignoring here the result of the callback
@@ -458,16 +464,16 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
                 }
                 else
                 {
-                    /* Codes_SRS_TLSIO_ARDUINO_21_066: [ If the tlsio state is TLSIO_ARDUINO_STATE_CLOSING, and ssl client is not connected, the tlsio_arduino_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_CLOSE, and call the on_io_close_complete. ]*/
-                    tls_io_instance->state = TLSIO_STATE_CLOSED;
+                    /* Codes_SRS_TLSIO_ARDUINO_21_066: [ If the tlsio state is TLSIO_ARDUINO_STATE_CLOSING, and ssl client is not connected, the tlsio_ssl_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_CLOSE, and call the on_io_close_complete. ]*/
+                    tls_io_instance->tlsio_state = TLSIO_STATE_CLOSED;
                     CallCloseCallback();
                 }
             } 
             else 
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_051: [ If the tlsio_arduino_close retry to close more than 10 times without success, it shall call the on_io_error. ]*/
-                /* Codes_SRS_TLSIO_ARDUINO_21_068: [ If the tlsio state is TLSIO_ARDUINO_STATE_CLOSING, ssl client is connected, and the counter to try becomes 0, the tlsio_arduino_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_ERROR, call on_io_error. ]*/
-                tls_io_instance->state = TLSIO_STATE_ERROR;
+                /* Codes_SRS_TLSIO_ARDUINO_21_068: [ If the tlsio state is TLSIO_ARDUINO_STATE_CLOSING, ssl client is connected, and the counter to try becomes 0, the tlsio_ssl_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_ERROR, call on_io_error. ]*/
+                tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
                 LogError("Timeout for close TLS");
                 CallErrorCallback();
             }

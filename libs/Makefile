@@ -16,6 +16,10 @@ ifeq "$(strip ${CFG_ALIYUN_SUPPORT})" "y"
     LOCAL_MODULE_DEPENDS += libs/aliyun 
 endif
 
+ifeq "$(strip ${CFG_AZURE_SUPPORT})" "y"
+    LOCAL_MODULE_DEPENDS += libs/azure 
+endif
+
 ifeq "$(strip ${CFG_LCD_SUPPORT})" "y"
     LOCAL_MODULE_DEPENDS += libs/lcd 
 endif
