@@ -218,21 +218,21 @@ static void getLogTime(char* timeResult, size_t len)
         {
             timeResult[0] = '\0';
         }
-        else
-        {
-            struct tm* tmInfo = localtime(&agent_time);
-            if (tmInfo == NULL)
-            {
-                timeResult[0] = '\0';
-            }
-            else
-            {
-                if (strftime(timeResult, len, "%H:%M:%S", tmInfo) == 0)
-                {
-                    timeResult[0] = '\0';
-                }
-            }
-        }
+        // else
+        // {
+        //     struct tm* tmInfo = localtime(&agent_time);
+        //     if (tmInfo == NULL)
+        //     {
+        //         timeResult[0] = '\0';
+        //     }
+        //     else
+        //     {
+        //         if (strftime(timeResult, len, "%H:%M:%S", tmInfo) == 0)
+        //         {
+        //             timeResult[0] = '\0';
+        //         }
+        //     }
+        // }
     }
 }
 

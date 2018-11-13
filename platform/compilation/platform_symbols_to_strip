@@ -1662,3 +1662,4 @@ __gcc_personality_sj0
 memset
 __emutls_register_common
 __emutls_get_address
+mqtt_client_connect

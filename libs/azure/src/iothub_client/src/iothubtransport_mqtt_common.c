@@ -2427,11 +2427,11 @@ TRANSPORT_LL_HANDLE IoTHubTransport_MQTT_Common_Create(const IOTHUBTRANSPORT_CON
         LogError("Invalid Argument: iotHubName is empty");
         result = NULL;
     }
-    else if (IoTHub_Transport_ValidateCallbacks(cb_info) != 0)
-    {
-        LogError("failure checking transport callbacks");
-        result = NULL;
-    }
+    // else if (IoTHub_Transport_ValidateCallbacks(cb_info) != 0)
+    // {
+    //     LogError("failure checking transport callbacks");
+    //     result = NULL;
+    // }
     else
     {
         result = InitializeTransportHandleData(config->upperConfig, config->waitingToSend, config->auth_module_handle, config->moduleId);

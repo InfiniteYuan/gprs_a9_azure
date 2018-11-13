@@ -13,15 +13,15 @@ LOCAL_ADD_INCLUDE := include\
                     include/api_inc \
 					libs/azure/platform \
 					libs/azure/platform/include \
-					libs/azure/azure-iot-sdk-c/c-utility/inc \
-					libs/azure/azure-iot-sdk-c/c-utility/inc/azure_c_shared_utility \
-					libs/azure/azure-iot-sdk-c/c-utility/pal/inc \
-					libs/azure/azure-iot-sdk-c/c-utility/pal/generic \
-					libs/azure/azure-iot-sdk-c/iothub_client/inc \
-					libs/azure/azure-iot-sdk-c/serializer/inc \
-					libs/azure/azure-iot-sdk-c/umqtt/inc \
-					libs/azure/azure-iot-sdk-c/umqtt/inc/azure_umqtt_c \
-					libs/azure/azure-iot-sdk-c/deps/parson \
+					libs/azure/src/c-utility/inc \
+					libs/azure/src/c-utility/inc/azure_c_shared_utility \
+					libs/azure/src/c-utility/pal/inc \
+					libs/azure/src/c-utility/pal/generic \
+					libs/azure/src/iothub_client/inc \
+					libs/azure/src/serializer/inc \
+					libs/azure/src/umqtt/inc \
+					libs/azure/src/umqtt/inc/azure_umqtt_c \
+					libs/azure/src/deps/parson \
 
 
 # Set this to any non-null string to signal a module which 

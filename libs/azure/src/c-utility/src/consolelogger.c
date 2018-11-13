@@ -218,7 +218,7 @@ void consolelogger_log(LOG_CATEGORY log_category, const char* file, const char* 
         break;
     }
 
-    (void)vprintf(format, args);
+    // (void)vprintf(format, args);
     va_end(args);
 
     (void)log_category;
