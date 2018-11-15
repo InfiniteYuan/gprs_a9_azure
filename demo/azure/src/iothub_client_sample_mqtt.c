@@ -22,7 +22,8 @@
 /*String containing Hostname, Device Id & Device Key in the format:                         */
 /*  "HostName=<host_name>;DeviceId=<device_id>;SharedAccessKey=<device_key>"                */
 /*  "HostName=<host_name>;DeviceId=<device_id>;SharedAccessSignature=<device_sas_token>"    */
-static const char* connectionString = "HostName=GPRSA9.azure-devices.net;DeviceId=<device_id>;SharedAccessKey=aGdUmI2psHLqxtLvLwjopmEe5hRbsc+DiWOh/4uSHfg=";
+// static const char* connectionString = "HostName=GPRSA9.azure-devices.net;DeviceId=<device_id>;SharedAccessKey=aGdUmI2psHLqxtLvLwjopmEe5hRbsc+DiWOh/4uSHfg=";
+static const char* connectionString = "HostName=GPRSA9.azure-devices.net;DeviceId=gprsa;SharedAccessKey=96PoWFE7+qdlrTh23GqFtbXLkakLfuvXbzokURLh7sI=";
 
 static int callbackCounter;
 static char msgText[1024];
@@ -80,6 +81,7 @@ static IOTHUBMESSAGE_DISPOSITION_RESULT ReceiveMessageCallback(IOTHUB_MESSAGE_HA
         if (size == (strlen("quit") * sizeof(char)) && memcmp(buffer, "quit", size) == 0)
         {
             g_continueRunning = false;
+            (void)printf("ReceiveMessageCallback...Failed.\r\n");
         }
     }
 
@@ -124,6 +126,8 @@ void iothub_client_sample_mqtt_run(void)
 {
 	printf("\nFile:%s Compile Time:%s %s\n",__FILE__,__DATE__,__TIME__);
     IOTHUB_CLIENT_LL_HANDLE iotHubClientHandle;
+    // bool traceOn = true;
+    // IoTHubClient_LL_SetOption(iotHubClientHandle, "logtrace", &traceOn);
 
     EVENT_INSTANCE messages[MESSAGE_COUNT || 1];
 
@@ -140,12 +144,14 @@ void iothub_client_sample_mqtt_run(void)
     }
     else
     {
+        (void)printf("Success to initialize the platform.\r\n");
         if ((iotHubClientHandle = IoTHubClient_LL_CreateFromConnectionString(connectionString, MQTT_Protocol)) == NULL)
         {
             (void)printf("ERROR: iotHubClientHandle is NULL!\r\n");
         }
         else
         {
+        (void)printf("Success IoTHubClient_LL_CreateFromConnectionString.\r\n");
             bool traceOn = true;
             IoTHubClient_LL_SetOption(iotHubClientHandle, "logtrace", &traceOn);
 
@@ -173,6 +179,7 @@ void iothub_client_sample_mqtt_run(void)
                 {
                     if ((!MESSAGE_COUNT || (iterator < MESSAGE_COUNT)) && (iterator<= callbackCounter))
                     {
+                        (void)printf("MESSAGE_COUNT...successful.\r\n");
                         EVENT_INSTANCE *thisMessage = &messages[MESSAGE_COUNT ? iterator : 0];
 
                         sprintf_s(msgText, sizeof(msgText), "{\"deviceId\":\"AirConditionDevice_001\",\"windSpeed\":%.2f}", avgWindSpeed + (rand() % 4 + 2));
@@ -201,8 +208,10 @@ void iothub_client_sample_mqtt_run(void)
                         }
                         iterator++;
                     }
+                    (void)printf("IoTHubClient_LL_DoWork excute.\r\n");
                     IoTHubClient_LL_DoWork(iotHubClientHandle);
-                    printf("Sleeping for 5\n");
+                    (void)printf("IoTHubClient_LL_DoWork excute end.\r\n");
+                    (void)printf("Sleeping for 5\n");
                     ThreadAPI_Sleep(5000);
 
                     // if (callbackCounter>=MESSAGE_COUNT){

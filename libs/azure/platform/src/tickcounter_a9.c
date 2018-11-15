@@ -19,6 +19,7 @@ typedef struct TICK_COUNTER_INSTANCE_TAG {
 
 TICK_COUNTER_HANDLE tickcounter_create(void)
 {
+    printf("tickcounter_create\n");
     TICK_COUNTER_INSTANCE *result = (TICK_COUNTER_INSTANCE *)malloc(sizeof(TICK_COUNTER_INSTANCE));
     if (result != NULL) {
         result->init_clock = clock();
@@ -28,6 +29,7 @@ TICK_COUNTER_HANDLE tickcounter_create(void)
 
 void tickcounter_destroy(TICK_COUNTER_HANDLE tick_counter)
 {
+    printf("tickcounter_destroy\n");
     if (tick_counter != NULL) {
         free(tick_counter);
     }
@@ -35,11 +37,12 @@ void tickcounter_destroy(TICK_COUNTER_HANDLE tick_counter)
 
 int tickcounter_get_current_ms(TICK_COUNTER_HANDLE tick_counter, tickcounter_ms_t *current_ms)
 {
+    printf("tickcounter_get_current_ms\n");
     int result;
     clock_t current_clock;
 
     if (tick_counter == NULL || current_ms == NULL) {
-        LogError("tickcounter failed: Invalid Arguments.");
+        printf("tickcounter failed: Invalid Arguments.\n");
         result = __FAILURE__;
     } else {
         current_clock = clock();

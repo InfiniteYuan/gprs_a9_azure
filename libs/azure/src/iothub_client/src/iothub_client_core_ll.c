@@ -1973,6 +1973,7 @@ static void DoTimeouts(IOTHUB_CLIENT_CORE_LL_HANDLE_DATA* handleData)
 
 void IoTHubClientCore_LL_DoWork(IOTHUB_CLIENT_CORE_LL_HANDLE iotHubClientHandle)
 {
+    (void)printf("IoTHubClient_LL_DoWork start.\r\n");
     /*Codes_SRS_IOTHUBCLIENT_LL_02_020: [If parameter iotHubClientHandle is NULL then IoTHubClientCore_LL_DoWork shall not perform any action.] */
     if (iotHubClientHandle != NULL)
     {
@@ -1981,8 +1982,10 @@ void IoTHubClientCore_LL_DoWork(IOTHUB_CLIENT_CORE_LL_HANDLE iotHubClientHandle)
 
         /*Codes_SRS_IOTHUBCLIENT_LL_07_008: [ IoTHubClientCore_LL_DoWork shall iterate the message queue and execute the underlying transports IoTHubTransport_ProcessItem function for each item. ] */
         DLIST_ENTRY* client_item = handleData->iot_msg_queue.Flink;
+        (void)printf("IoTHubClient_LL_DoWork not NULL 0x%x.\r\n", client_item);
         while (client_item != &(handleData->iot_msg_queue)) /*while we are not at the end of the list*/
         {
+            (void)printf("IoTHubClient_LL_DoWork loop.\r\n");
             PDLIST_ENTRY next_item = client_item->Flink;
 
             IOTHUB_DEVICE_TWIN* queue_data = containingRecord(client_item, IOTHUB_DEVICE_TWIN, entry);
@@ -2012,6 +2015,7 @@ void IoTHubClientCore_LL_DoWork(IOTHUB_CLIENT_CORE_LL_HANDLE iotHubClientHandle)
             // Move along to the next item
             client_item = next_item;
         }
+        (void)printf("IoTHubClient_LL_DoWork exit loop.\r\n");
 
         /*Codes_SRS_IOTHUBCLIENT_LL_02_021: [Otherwise, IoTHubClientCore_LL_DoWork shall invoke the underlaying layer's _DoWork function.]*/
         handleData->IoTHubTransport_DoWork(handleData->transportHandle);

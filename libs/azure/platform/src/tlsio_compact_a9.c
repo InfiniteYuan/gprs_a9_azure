@@ -73,16 +73,27 @@ typedef struct TLS_IO_INSTANCE_TAG
 
 static void tlsio_ssl_Init(TLS_IO_INSTANCE* tls_io_instance)
 {
+    printf("start tlsio_ssl_Init\n");
     tls_io_instance->config->caCert = tls_io_instance->trusted_certificates;
+    printf("start caCert\n");
     tls_io_instance->config->caCrl  = NULL;
+    printf("start caCrl\n");
     tls_io_instance->config->clientCert = NULL;
+    printf("start clientCert\n");
     tls_io_instance->config->clientKey  = NULL;
+    printf("start clientKey\n");
     tls_io_instance->config->clientKeyPasswd = NULL;
+    printf("start tlsio_ssl_Init\n");
     tls_io_instance->config->hostName   = tls_io_instance->hostname;
+    printf("start hostName\n");
     tls_io_instance->config->minVersion = SSL_VERSION_TLSv1_2;
+    printf("start tlsio_ssl_Init\n");
     tls_io_instance->config->maxVersion = SSL_VERSION_TLSv1_2;
+    printf("start maxVersion\n");
     tls_io_instance->config->verifyMode = SSL_VERIFY_MODE_REQUIRED;
+    printf("start tlsio_ssl_Init\n");
     tls_io_instance->config->entropyCustom = "GPRS_AZURE";
+    printf("end entropyCustom\n");
 }
 
 static int tlsio_ssl_setoption(CONCRETE_IO_HANDLE tlsio_handle, const char* optionName, const void* value);
@@ -92,24 +103,27 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle);
 /* Codes_SRS_TLSIO_OPENSSL_COMPACT_30_560: [ The  tlsio_retrieveoptions  shall do nothing and return an empty options handler. ]*/
 static OPTIONHANDLER_HANDLE tlsio_ssl_retrieveoptions(CONCRETE_IO_HANDLE tlsio_handle)
 {
+    printf("start tlsio_ssl_retrieveoptions\n");
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tlsio_handle;
     /* Codes_SRS_TLSIO_30_160: [ If the tlsio_handle parameter is NULL, tlsio_openssl_compact_retrieveoptions shall do nothing except log an error and return FAILURE. ]*/
     OPTIONHANDLER_HANDLE result;
     if (tls_io_instance == NULL)
     {
-        LogError("NULL tlsio");
+        printf("NULL tlsio\n");
         result = NULL;
     }
     else
     {
         result = tlsio_options_retrieve_options(&tls_io_instance->options, tlsio_ssl_setoption);
     }
+    printf("end tlsio_ssl_retrieveoptions\n");
     return result;
 }
 
 /* Codes_SRS_TLSIO_30_010: [ The tlsio_create shall allocate and initialize all necessary resources and return an instance of the tlsio_openssl_compact. ]*/
 static CONCRETE_IO_HANDLE tlsio_ssl_create(void* io_create_parameters)
 {
+    printf("start tlsio_ssl_create\n");
     TLS_IO_INSTANCE* tls_io_instance;
 
     /* Codes_SRS_TLSIO_30_012: [ The tlsio_create shall receive the connection configuration as a TLSIO_CONFIG* in io_create_parameters. ]*/
@@ -118,27 +132,33 @@ static CONCRETE_IO_HANDLE tlsio_ssl_create(void* io_create_parameters)
     if (io_create_parameters == NULL || tls_io_config->hostname == NULL || tls_io_config->port < 0 || tls_io_config->port > MAX_VALID_PORT)
     {
         /* Codes_SRS_TLSIO_30_013: [ If the io_create_parameters value is NULL, tlsio_create shall log an error and return NULL. ]*/
-        LogError("Invalid TLS parameters.");
+        printf("Invalid TLS parameters.\n");
         /* Codes_SRS_TLSIO_30_014: [ If the hostname member of io_create_parameters value is NULL, tlsio_create shall log an error and return NULL. ]*/
-        LogError("NULL tls_io_config->hostname");
+        printf("NULL tls_io_config->hostname\n");
         /* Codes_SRS_TLSIO_30_015: [ If the port member of io_create_parameters value is less than 0 or greater than 0xffff, tlsio_create shall log an error and return NULL. ]*/
-        LogError("tls_io_config->port out of range");
+        printf("tls_io_config->port out of range\n");
         tls_io_instance = NULL;
     }
     else
     {
+        printf("Valid TLS parameters.\n");
         tls_io_instance = (TLS_IO_INSTANCE*)malloc(sizeof(TLS_IO_INSTANCE));
         if (tls_io_instance == NULL)
         {
             /* Codes_SRS_TLSIO_30_011: [ If any resource allocation fails, tlsio_create shall return NULL. ]*/
-            LogError("There is not enough memory to create the TLS instance.");
+            printf("There is not enough memory to create the TLS instance.\n");
             free(tls_io_instance);
             tls_io_instance = NULL;
         }
         else
         {
+            printf("malloc success.\n");
             int ret = 0;
             char port_str[10];
+            tls_io_instance->config = (SSL_Config_t*)malloc(sizeof(SSL_Config_t));
+            if (tls_io_instance->config == NULL)
+                printf("There is not enough memory to create the TLS instance config.\n");
+
             /* SRS_TLSIO_30_010: [ The tlsio_create shall allocate and initialize all necessary resources and return an instance of the tlsio in TLSIO_STATE_EXT_CLOSED. ] */
             memset(tls_io_instance, 0, sizeof(TLS_IO_INSTANCE));
             tls_io_instance->on_io_open_complete = NULL;
@@ -154,9 +174,10 @@ static CONCRETE_IO_HANDLE tlsio_ssl_create(void* io_create_parameters)
             tlsio_options_initialize(&tls_io_instance->options, TLSIO_OPTION_BIT_NONE);
             /* Codes_SRS_TLSIO_30_016: [ tlsio_create shall make a copy of the hostname member of io_create_parameters to allow deletion of hostname immediately after the call. ]*/
             ret = mallocAndStrcpy_s(&tls_io_instance->hostname, tls_io_config->hostname);
+            printf("mallocAndStrcpy_s success.\n");
             if (ret != 0) {
                 /* Codes_SRS_TLSIO_30_011: [ If any resource allocation fails, tlsio_create shall return NULL. ]*/
-                LogError("There is not enough memory to create tls_io_instance->hostname.");
+                printf("There is not enough memory to create tls_io_instance->hostname.\n");
                 tlsio_ssl_destroy(tls_io_instance);
                 tls_io_instance = NULL;
             } else {
@@ -164,25 +185,27 @@ static CONCRETE_IO_HANDLE tlsio_ssl_create(void* io_create_parameters)
                 ret = mallocAndStrcpy_s(&tls_io_instance->port, port_str);
                 if(ret != 0) {
                     /* Codes_SRS_TLSIO_30_011: [ If any resource allocation fails, tlsio_create shall return NULL. ]*/
-                    LogError("There is not enough memory to create tls_io_instance->port.");
+                    printf("There is not enough memory to create tls_io_instance->port.\n");
                     tlsio_ssl_destroy(tls_io_instance);
                     tls_io_instance = NULL;
                 } else {
+                    printf("mallocAndStrcpy_s port success.\n");
                     tlsio_ssl_Init(tls_io_instance);
                 }
             }
         }
     }
-
+    printf("end tlsio_ssl_create\n");
     return (CONCRETE_IO_HANDLE)tls_io_instance;
 }
 
 static void tlsio_ssl_destroy(CONCRETE_IO_HANDLE tlsio_handle)
 {
+    printf("start tlsio_ssl_destroy\n");
     if (tlsio_handle == NULL)
     {
         /* Codes_SRS_TLSIO_30_020: [ If tlsio_handle is NULL, tlsio_destroy shall do nothing. ]*/
-        LogError("NULL TLS handle.");
+        printf("NULL TLS handle.\n");
     }
     else
     {
@@ -190,7 +213,7 @@ static void tlsio_ssl_destroy(CONCRETE_IO_HANDLE tlsio_handle)
         if (tls_io_instance->tlsio_state != TLSIO_STATE_CLOSED)
         {
             /* Codes_SRS_TLSIO_30_022: [ If the adapter is in any state other than TLSIO_STATE_EX_CLOSED when tlsio_destroy is called, the adapter shall enter TLSIO_STATE_EX_CLOSING and then enter TLSIO_STATE_EX_CLOSED before completing the destroy process. ]*/
-            LogError("TLS destroyed with a SSL connection still active.");
+            printf("TLS destroyed with a SSL connection still active.\n");
         }
         /* Codes_SRS_TLSIO_30_021: [ The tlsio_destroy shall release all allocated resources and then release tlsio_handle. ]*/
         if (tls_io_instance->hostname != NULL)
@@ -207,6 +230,7 @@ static void tlsio_ssl_destroy(CONCRETE_IO_HANDLE tlsio_handle)
 
         free(tls_io_instance);
     }
+    printf("end tlsio_ssl_destroy\n");
 }
 
 static int tlsio_ssl_open(CONCRETE_IO_HANDLE tlsio_handle,
@@ -214,13 +238,13 @@ static int tlsio_ssl_open(CONCRETE_IO_HANDLE tlsio_handle,
     ON_BYTES_RECEIVED on_bytes_received, void* on_bytes_received_context,
     ON_IO_ERROR on_io_error, void* on_io_error_context)
 {
-
+    printf("start tlsio_ssl_open\n");
     int result;
     if (on_io_open_complete == NULL || tlsio_handle == NULL || 
         on_bytes_received == NULL || on_io_error == NULL)
     {
         /* Codes_SRS_TLSIO_30_031: [ If the on_io_open_complete parameter is NULL, tlsio_open shall log an error and return FAILURE. ]*/
-        LogError("Invalid parameter: NULL");
+        printf("Invalid parameter: NULL\n");
         result = __FAILURE__;
     }
     else
@@ -239,7 +263,7 @@ static int tlsio_ssl_open(CONCRETE_IO_HANDLE tlsio_handle,
         if (tls_io_instance->tlsio_state != TLSIO_STATE_CLOSED)
         {
             /* Codes_SRS_TLSIO_30_037: [ If the adapter is in any state other than TLSIO_STATE_EXT_CLOSED when tlsio_open  is called, it shall log an error, and return FAILURE. ]*/
-            LogError("Invalid tlsio_state. Expected state is TLSIO_STATE_CLOSED.");
+            printf("Invalid tlsio_state. Expected state is TLSIO_STATE_CLOSED.\n");
             result = __FAILURE__;
         }
         else
@@ -273,17 +297,19 @@ static int tlsio_ssl_open(CONCRETE_IO_HANDLE tlsio_handle,
         /* Codes_SRS_TLSIO_ARDUINO_21_041: [ If the tlsio_arduino_open get success opening the tls connection, it shall call the tlsio_ssl_dowork. ]*/
         tlsio_ssl_dowork(tlsio_handle);
     }
+    printf("end tlsio_ssl_open\n");
     return result;
 }
 
 // This implementation does not have asynchronous close, but uses the _async name for consistency with the spec
 static int tlsio_ssl_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE on_io_close_complete, void* on_io_close_complete_context)
 {
+    printf("start tlsio_ssl_close\n");
     int result;
     if (tlsio_handle == NULL)
     {
         /* Codes_SRS_TLSIO_30_050: [ If the tlsio_handle parameter is NULL, tlsio_openssl_close_async shall log an error and return FAILURE. ]*/
-        LogError("NULL tlsio");
+        printf("NULL tlsio\n");
         result = __FAILURE__;
     }
     else
@@ -298,14 +324,14 @@ static int tlsio_ssl_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE
         if ((tls_io_instance->tlsio_state == TLSIO_STATE_CLOSED) || (tls_io_instance->tlsio_state == TLSIO_STATE_ERROR))
         {
             /* Codes_SRS_TLSIO_30_053: [ If the adapter is in any state other than TLSIO_STATE_EXT_OPEN or TLSIO_STATE_EXT_ERROR then tlsio_close_async shall log that tlsio_close_async has been called and then continue normally. ]*/
-            // LogInfo rather than LogError because this is an unusual but not erroneous situation
+            // LogInfo rather than printf because this is an unusual but not erroneous situat\nion
             tls_io_instance->tlsio_state = TLSIO_STATE_CLOSED;
             result = 0;
         } 
         else if ((tls_io_instance->tlsio_state == TLSIO_STATE_OPENING) || (tls_io_instance->tlsio_state == TLSIO_STATE_CLOSING))
         {
             /* Codes_SRS_TLSIO_30_057: [ On success, if the adapter is in TLSIO_STATE_EXT_OPENING, it shall call on_io_open_complete with the on_io_open_complete_context supplied in tlsio_open_async and IO_OPEN_CANCELLED. This callback shall be made before changing the internal state of the adapter. ]*/
-            LogError("Try to close the connection with an already closed TLS.");
+            printf("Try to close the connection with an already closed TLS.\n");
             tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
             result = __FAILURE__;
         }
@@ -323,12 +349,13 @@ static int tlsio_ssl_close(CONCRETE_IO_HANDLE tlsio_handle, ON_IO_CLOSE_COMPLETE
         }
     }
     /* Codes_SRS_TLSIO_30_054: [ On failure, the adapter shall not call on_io_close_complete. ]*/
-
+    printf("end tlsio_ssl_close\n");
     return result;
 }
 
 static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, size_t size, ON_SEND_COMPLETE on_send_complete, void* on_send_complete_context)
 {
+    printf("start tlsio_ssl_send\n");
     int result;
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tlsio_handle;
 
@@ -337,13 +364,13 @@ static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, s
         /* Codes_SRS_TLSIO_30_060: [ If the tlsio_handle parameter is NULL, tlsio_openssl_compact_send shall log an error and return FAILURE. ]*/
         /* Codes_SRS_TLSIO_30_061: [ If the buffer is NULL, tlsio_openssl_compact_send shall log the error and return FAILURE. ]*/
         /* Codes_SRS_TLSIO_30_067: [ If the  size  is 0,  tlsio_send  shall log the error and return FAILURE. ]*/
-        LogError("Invalid parameter");
+        printf("Invalid parameter\n");
         result = __FAILURE__;
     }
     else if (tls_io_instance->tlsio_state != TLSIO_STATE_OPEN)
     {
         /* Codes_SRS_TLSIO_ARDUINO_21_058: [ If the tlsio state is TLSIO_ARDUINO_STATE_ERROR, TLSIO_ARDUINO_STATE_OPENING, TLSIO_ARDUINO_STATE_CLOSING, or TLSIO_ARDUINO_STATE_CLOSED, the tlsio_arduino_send shall call the on_send_complete with IO_SEND_ERROR, and return _LINE_. ]*/
-        LogError("TLS is not ready to send data");
+        printf("TLS is not ready to send data\n");
         result = __FAILURE__;
     }
     else
@@ -361,7 +388,7 @@ static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, s
             if (send_result <= 0) /* Didn't transmit anything! Failed. */
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_056: [ if the ssl was not able to send any byte in the buffer, the tlsio_arduino_send shall call the on_send_complete with IO_SEND_ERROR, and return _LINE_. ]*/
-                LogError("TLS failed sending data");
+                printf("TLS failed sending data\n");
                 /* Codes_SRS_TLSIO_ARDUINO_21_053: [ The tlsio_arduino_send shall use the provided on_io_send_complete callback function address. ]*/
                 /* Codes_SRS_TLSIO_ARDUINO_21_054: [ The tlsio_arduino_send shall use the provided on_io_send_complete_context handle. ]*/
                 if (on_send_complete != NULL)
@@ -392,15 +419,17 @@ static int tlsio_ssl_send(CONCRETE_IO_HANDLE tlsio_handle, const void* buffer, s
         }
         /* Codes_SRS_TLSIO_30_066: [ On failure, on_send_complete shall not be called. ]*/
     }
+    printf("end tlsio_ssl_send\n");
     return result;
 }
 
 static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
 {
+    printf("start tlsio_ssl_dowork\n");
     if (tlsio_handle == NULL)
     {
         /* Codes_SRS_TLSIO_30_070: [ If the tlsio_handle parameter is NULL, tlsio_dowork shall do nothing except log an error. ]*/
-        LogError("Invalid parameter: tlsio NULL");
+        printf("Invalid parameter: tlsio NULL\n");
     }
     else
     {
@@ -411,6 +440,7 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
         /* Codes_SRS_TLSIO_ARDUINO_21_076: [ The tlsio_ssl_dowork shall delete the buffer to store the data received from the ssl client. ]*/
         uint8_t RecvBuffer[RECEIVE_BUFFER_SIZE];
 
+        printf("tls_io_instance->tlsio_state %d\n", tls_io_instance->tlsio_state);
         // This switch statement handles all of the state transitions during the opening process
         switch (tls_io_instance->tlsio_state)
         {
@@ -421,7 +451,7 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
                 if (error != SSL_ERROR_NONE)
                 {
                     /* Codes_SRS_TLSIO_30_038: [ If tlsio_open fails to enter TLSIO_STATE_EX_OPENING it shall return FAILURE. ]*/
-                    LogError("TLS failed to start the connection process.");
+                    printf("TLS failed to start the connection process.\n");
                 } 
                 else 
                 {
@@ -435,7 +465,7 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             {
                 /* Codes_SRS_TLSIO_ARDUINO_21_065: [ If the tlsio state is TLSIO_ARDUINO_STATE_OPENING, ssl client is not connected, and the counter to try becomes 0, the tlsio_ssl_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_ERROR, call on_io_open_complete with IO_OPEN_CANCELLED, call on_io_error. ]*/
                 tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                LogError("Timeout for TLS connect.");
+                printf("Timeout for TLS connect.\n");
                 /* Codes_SRS_TLSIO_ARDUINO_21_002: [ The tlsio_arduino shall report the open operation status using the IO_OPEN_RESULT enumerator defined in the `xio.h`.]*/
                 /* Codes_SRS_TLSIO_ARDUINO_21_042: [ If the tlsio_arduino_open retry to open more than 10 times without success, it shall call the on_io_open_complete with IO_OPEN_CANCELED. ]*/
                 CallOpenCallback(IO_OPEN_CANCELLED);
@@ -460,7 +490,7 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
                 if (error != SSL_ERROR_NONE)
                 {
                     /* Codes_SRS_TLSIO_30_038: [ If tlsio_open fails to enter TLSIO_STATE_EX_OPENING it shall return FAILURE. ]*/
-                    LogError("TLS failed to start the connection process.");
+                    printf("TLS failed to start the connection process.\n");
                 }
                 else
                 {
@@ -474,7 +504,7 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
                 /* Codes_SRS_TLSIO_ARDUINO_21_051: [ If the tlsio_arduino_close retry to close more than 10 times without success, it shall call the on_io_error. ]*/
                 /* Codes_SRS_TLSIO_ARDUINO_21_068: [ If the tlsio state is TLSIO_ARDUINO_STATE_CLOSING, ssl client is connected, and the counter to try becomes 0, the tlsio_ssl_dowork shall change the tlsio state to TLSIO_ARDUINO_STATE_ERROR, call on_io_error. ]*/
                 tls_io_instance->tlsio_state = TLSIO_STATE_ERROR;
-                LogError("Timeout for close TLS");
+                printf("Timeout for close TLS\n");
                 CallErrorCallback();
             }
             break;
@@ -487,20 +517,22 @@ static void tlsio_ssl_dowork(CONCRETE_IO_HANDLE tlsio_handle)
             // There's nothing valid to do here but wait to be retried
             break;
         default:
-            LogError("Unexpected internal tlsio state");
+            printf("Unexpected internal tlsio state\n");
             break;
         }
     }
+    printf("end tlsio_ssl_dowork\n");
 }
 
 static int tlsio_ssl_setoption(CONCRETE_IO_HANDLE tlsio_handle, const char* optionName, const void* value)
 {
+    printf("start tlsio_ssl_setoption\n");
     TLS_IO_INSTANCE* tls_io_instance = (TLS_IO_INSTANCE*)tlsio_handle;
     /* Codes_SRS_TLSIO_30_120: [ If the tlsio_handle parameter is NULL, tlsio_openssl_compact_setoption shall do nothing except log an error and return FAILURE. ]*/
     int result;
     if (tls_io_instance == NULL)
     {
-        LogError("NULL tlsio");
+        printf("NULL tlsio\n");
         result = __FAILURE__;
     }
     else
@@ -517,14 +549,14 @@ static int tlsio_ssl_setoption(CONCRETE_IO_HANDLE tlsio_handle, const char* opti
             }
             if (mallocAndStrcpy_s(&tls_io_instance->trusted_certificates, (const char*)value) != 0)
             {
-                LogError("unable to mallocAndStrcpy_s");
+                printf("unable to mallocAndStrcpy_s\n");
                 result = __FAILURE__;
             }
         }
         TLSIO_OPTIONS_RESULT options_result = tlsio_options_set(&tls_io_instance->options, optionName, value);
         if (options_result != TLSIO_OPTIONS_RESULT_SUCCESS)
         {
-            LogError("Failed tlsio_options_set");
+            printf("Failed tlsio_options_set\n");
             result = __FAILURE__;
         }
         else
@@ -532,6 +564,7 @@ static int tlsio_ssl_setoption(CONCRETE_IO_HANDLE tlsio_handle, const char* opti
             result = 0;
         }
     }
+    printf("end tlsio_ssl_setoption\n");
     return result;
 }
 
@@ -551,5 +584,6 @@ static const IO_INTERFACE_DESCRIPTION tlsio_ssl_interface_description =
 /* Codes_SRS_TLSIO_30_001: [ The tlsio_openssl_compact shall implement and export all the Concrete functions in the VTable IO_INTERFACE_DESCRIPTION defined in the xio.h. ]*/
 const IO_INTERFACE_DESCRIPTION* tlsio_pal_get_interface_description(void)
 {
+    printf("tlsio_pal_get_interface_description\n");
     return &tlsio_ssl_interface_description;
 }

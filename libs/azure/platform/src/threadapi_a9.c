@@ -21,7 +21,7 @@ THREADAPI_RESULT ThreadAPI_Create(THREAD_HANDLE* threadHandle, THREAD_START_FUNC
 	(void)threadHandle;
 	(void)func;
 	(void)arg;
-    LogError("GPRS A9 does not support multi-threading.");
+    printf("GPRS A9 does not support multi-threading.\n");
     return THREADAPI_ERROR;
 }
 
@@ -30,7 +30,7 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res)
 {
 	(void)threadHandle;
 	(void)res;
-    LogError("GPRS A9 does not support multi-threading.");
+    printf("GPRS A9 does not support multi-threading.\n");
     return THREADAPI_ERROR;
 }
 
@@ -38,5 +38,5 @@ THREADAPI_RESULT ThreadAPI_Join(THREAD_HANDLE threadHandle, int* res)
 void ThreadAPI_Exit(int res)
 {
 	(void)res;
-    LogError("GPRS A9 does not support multi-threading.");
+    printf("GPRS A9 does not support multi-threading.\n");
 }

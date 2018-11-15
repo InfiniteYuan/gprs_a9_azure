@@ -15,12 +15,17 @@
 time_t sntp_get_current_timestamp()
 {
     time_t timeNow = 0;
-    if (NTP_Update(NTP_SERVER, 5, &timeNow, true) != 0) {
-        timeNow = 0;
-    }
-    if ( timeNow > 0) {
-        Trace(1, "ntp get time success,timestamp:%d", timeNow);
-        Trace(1, "timestamp:%d Time: %s", timeNow, ctime( ( const time_t * ) &timeNow ));
+    while(1)
+    {
+        if (NTP_Update(NTP_SERVER, 5, &timeNow, true) != 0) {
+            timeNow = 0;
+            Trace(1, "ntp get time fail,timestamp:%d", timeNow);
+        }
+        if ( timeNow > 0) {
+            Trace(1, "ntp get time success,timestamp:%d", timeNow);
+            Trace(1, "timestamp:%d Time: %s", timeNow, ctime( ( const time_t * ) &timeNow ));
+            break;
+        }
     }
     return timeNow;
 }
