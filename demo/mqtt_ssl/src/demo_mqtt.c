@@ -14,28 +14,25 @@
 
 
 const char* ca_crt = "-----BEGIN CERTIFICATE-----\n\
-MIID9zCCAt+gAwIBAgIJAKrbX9HP30ZJMA0GCSqGSIb3DQEBBQUAMIGRMQswCQYD\n\
-VQQGEwJDTjESMBAGA1UECAwJR1VBTkdET05HMREwDwYDVQQHDAhTSEVOWkhFTjEU\n\
-MBIGA1UECgwLTkVVQ1JBQ0tfQ0ExCzAJBgNVBAsMAkNBMRQwEgYDVQQDDAtuZXVj\n\
-cmFja19jYTEiMCAGCSqGSIb3DQEJARYTY3pkNjY2NjY2QGdtYWlsLmNvbTAeFw0x\n\
-ODAxMTgwMjA0NDZaFw0xOTAxMTgwMjA0NDZaMIGRMQswCQYDVQQGEwJDTjESMBAG\n\
-A1UECAwJR1VBTkdET05HMREwDwYDVQQHDAhTSEVOWkhFTjEUMBIGA1UECgwLTkVV\n\
-Q1JBQ0tfQ0ExCzAJBgNVBAsMAkNBMRQwEgYDVQQDDAtuZXVjcmFja19jYTEiMCAG\n\
-CSqGSIb3DQEJARYTY3pkNjY2NjY2QGdtYWlsLmNvbTCCASIwDQYJKoZIhvcNAQEB\n\
-BQADggEPADCCAQoCggEBAKoILs3FRTa0YTafiUVOPitQhiwNN7ETfcjGRABbhpCY\n\
-V4B2MWZ5tD7YLcSLTgOBt47B4IXlV6iOFzBwQVidmROo19770kSgjyVLucGcNzl0\n\
-V6YhWOONZrji748o71xFRbIgMqn1ZpnKdxbN4ffd67JKFQm4Nxr9jvWBgX2Yz87i\n\
-jF41YeOqOWyeBdEns0ac18XRk+92rOWGaFIZcrjjkM8Y5CzgoyQcpFuxC0KUMSAD\n\
-LQUV2RGtJfayaQwFdDj4du9Aaau+oWTG7YBObQ2tC8lBW6yoYffblOuymS60WRnp\n\
-wMmBJAOC1QhFoy7+KrpOX3XZoGN90DHR4LDRGgf8mDsCAwEAAaNQME4wHQYDVR0O\n\
-BBYEFDuyErKvVVDqDDeJn7spBG3/YpsXMB8GA1UdIwQYMBaAFDuyErKvVVDqDDeJ\n\
-n7spBG3/YpsXMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEFBQADggEBAG2pknG/\n\
-K+gtk4OKSmIgjekkPDfq37q7NZpVCcIah34/74dWYETfklj0ZNppWabdthDY3NUa\n\
-ZGaBneKrsQ6Bw0lmbMVUiKseuC6SXhr1P2uLVtM4yZ3nzAVjji/4xKKUbcrPNP+F\n\
-HV1Wn6nN4zcq5amFPuZOdWO6fNSJXMptC2GBWkD/xjU1H1nyjbh0EUcz1/EGLKhe\n\
-3Tci+zDwoHRpkahxaSmiEIVFrFMD383klB6shmjHUj9tLiZtPXJ8X5gYTldoXjGY\n\
-12Mtk4p8T669WlULZO0gbeSJerOgbiWq3fm5TyAV2Xc5CoajwPLKRmKePU6qL1BW\n\
-HR+RdH8WbXeBvoY=\n\
+MIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n\
+RTESMBAGA1UEChMJQmFsdGltb3JlMRMwEQYDVQQLEwpDeWJlclRydXN0MSIwIAYD\n\
+VQQDExlCYWx0aW1vcmUgQ3liZXJUcnVzdCBSb290MB4XDTAwMDUxMjE4NDYwMFoX\n\
+DTI1MDUxMjIzNTkwMFowWjELMAkGA1UEBhMCSUUxEjAQBgNVBAoTCUJhbHRpbW9y\n\
+ZTETMBEGA1UECxMKQ3liZXJUcnVzdDEiMCAGA1UEAxMZQmFsdGltb3JlIEN5YmVy\n\
+VHJ1c3QgUm9vdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKMEuyKr\n\
+mD1X6CZymrV51Cni4eiVgLGw41uOKymaZN+hXe2wCQVt2yguzmKiYv60iNoS6zjr\n\
+IZ3AQSsBUnuId9Mcj8e6uYi1agnnc+gRQKfRzMpijS3ljwumUNKoUMMo6vWrJYeK\n\
+mpYcqWe4PwzV9/lSEy/CG9VwcPCPwBLKBsua4dnKM3p31vjsufFoREJIE9LAwqSu\n\
+XmD+tqYF/LTdB1kC1FkYmGP1pWPgkAx9XbIGevOF6uvUA65ehD5f/xXtabz5OTZy\n\
+dc93Uk3zyZAsuT3lySNTPx8kmCFcB5kpvcY67Oduhjprl3RjM71oGDHweI12v/ye\n\
+jl0qhqdNkNwnGjkCAwEAAaNFMEMwHQYDVR0OBBYEFOWdWTCCR1jMrPoIVDaGezq1\n\
+BE3wMBIGA1UdEwEB/wQIMAYBAf8CAQMwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3\n\
+DQEBBQUAA4IBAQCFDF2O5G9RaEIFoN27TyclhAO992T9Ldcw46QQF+vaKSm2eT92\n\
+9hkTI7gQCvlYpNRhcL0EYWoSihfVCr3FvDB81ukMJY2GQE/szKN+OMY3EU/t3Wgx\n\
+jkzSswF07r51XgdIGn9w/xZchMB5hbgF/X++ZRGjD8ACtPhSNzkE1akxehi/oCr0\n\
+Epn3o0WC4zxe9Z2etciefC7IpJ5OCBRLbf1wbWsaY71k5h+3zvDyny67G7fyUIhz\n\
+ksLi4xaNmjICq44Y3ekQEe5+NauQrz4wlHrQMz2nZQ/1/I6eYs9HRCwBXbsdtTLS\n\
+R9I4LtD+gdwyah617jzV/OeBHRnDJELqYzmp\n\
 -----END CERTIFICATE-----";
 
 const char* client_crt = "-----BEGIN CERTIFICATE-----\n\
@@ -268,7 +265,7 @@ void OnTimerPublish(void* param)
         return;
     }
     Trace(1,"MQTT OnTimerPublish");
-    err = MQTT_Publish(client,PUBLISH_TOPIC,PUBLISH_PAYLOEAD,strlen(PUBLISH_PAYLOEAD),1,2,0,OnPublish,NULL);
+    err = MQTT_Publish(client,"devices/gprsa/messages/events/",PUBLISH_PAYLOEAD,strlen(PUBLISH_PAYLOEAD),1,1,0,OnPublish,NULL);
     if(err != MQTT_ERROR_NONE)
         Trace(1,"MQTT publish error, error code:%d",err);
     StartTimerPublish(PUBLISH_INTERVAL,client);
@@ -285,10 +282,10 @@ void SecondTaskEventDispatch(MQTT_Event_t* pEvent)
     {
         case MQTT_EVENT_CONNECTED:
             mqttStatus = MQTT_STATUS_CONNECTED;
-            Trace(1,"MQTT connected, now subscribe topic:%s",SUBSCRIBE_TOPIC);
+            Trace(1,"MQTT connected, now subscribe topic:%s","devices/gprsa/messages/events/");
             MQTT_Error_t err;
             MQTT_SetInPubCallback(pEvent->client, OnMqttReceived, OnMqttReceiedData, NULL);
-            err = MQTT_Subscribe(pEvent->client,SUBSCRIBE_TOPIC,2,OnMqttSubscribed,(void*)SUBSCRIBE_TOPIC);
+            err = MQTT_Subscribe(pEvent->client,"devices/gprsa/messages/events/",1,OnMqttSubscribed,(void*)"devices/gprsa/messages/events/");
             if(err != MQTT_ERROR_NONE)
                 Trace(1,"MQTT subscribe error, error code:%d",err);
             StartTimerPublish(PUBLISH_INTERVAL,pEvent->client);
@@ -316,29 +313,30 @@ void SecondTask(void *pData)
     MQTT_Connect_Info_t ci;
     MQTT_Error_t err;
     memset(&ci,0,sizeof(MQTT_Connect_Info_t));
-    ci.client_id = imei;
-    ci.client_user = CLIENT_USER;
-    ci.client_pass = CLIENT_PASS;
+    ci.client_id = "gprsa";
+    ci.client_user = "GPRSA9.azure-devices.net/gprsa/api-version=2016-11-14";
+    ci.client_pass = "SharedAccessSignature sr=GPRSA9.azure-devices.net%2Fdevices%2Fgprsa&sig=KymHOMHiyGt%2F1nn2XNtQh6YkraUYW3zddpXJNoD4AP0%3D&se=37542392914";
     ci.keep_alive = 60;
     ci.clean_session = 1;
     ci.use_ssl = true;
     ci.ssl_verify_mode = MQTT_SSL_VERIFY_MODE_REQUIRED;
+//ca_certs=path_to_root_cert, certfile=None, keyfile=None, cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLSv1, ciphers=None)
     ci.ca_cert = ca_crt;
     ci.ca_crl = NULL;
-    ci.client_cert = client_crt;
-    ci.client_key  = client_key;
+    ci.client_cert = NULL;
+    ci.client_key  = NULL;
     ci.client_key_passwd = NULL;
-    ci.broker_hostname = BROKER_HOSTNAME;
-    ci.ssl_min_version   = MQTT_SSL_VERSION_SSLv3;
-    ci.ssl_max_version   = MQTT_SSL_VERSION_TLSv1_2;
+    ci.broker_hostname = "GPRSA9.azure-devices.net";
+    ci.ssl_min_version   = MQTT_SSL_VERSION_TLSv1;
+    ci.ssl_max_version   = MQTT_SSL_VERSION_TLSv1;
     ci.entropy_custom    = "GPRS_A9";
-    ci.will_qos = 2;
+    ci.will_qos = 1;
     ci.will_topic = "will";
     ci.will_retain = 1;
     memcpy(strstr(willMsg,"GPRS")+5,imei,15);
     ci.will_msg = willMsg;
 
-    err = MQTT_Connect(client,BROKER_IP,BROKER_PORT,OnMqttConnection,NULL,&ci);
+    err = MQTT_Connect(client,"GPRSA9.azure-devices.net",8883,OnMqttConnection,NULL,&ci);
     if(err != MQTT_ERROR_NONE)
         Trace(1,"MQTT connect fail,error code:%d",err);
     

@@ -32,7 +32,7 @@ IS_ENTRY_POINT := no
 ## ------------------------------------ ##
 ## 	Add your custom flags here          ##
 ## ------------------------------------ ##
-MYCFLAGS += 
+MYCFLAGS += -DUSE_LWIP_SOCKET_FOR_AZURE_IOT
 
 ## ------------------------------------- ##
 ##	List all your sources here           ##

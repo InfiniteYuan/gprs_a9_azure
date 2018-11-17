@@ -1,3 +1,4 @@
+mqtt_client_connect
 get_fattime
 disk_read
 disk_write
@@ -1662,4 +1663,3 @@ __gcc_personality_sj0
 memset
 __emutls_register_common
 __emutls_get_address
-mqtt_client_connect

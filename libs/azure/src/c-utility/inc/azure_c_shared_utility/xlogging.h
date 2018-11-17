@@ -53,6 +53,8 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #define LOG_NONE 0x00
 #define LOG_LINE 0x01
 
+#define MINIMAL_LOGERROR
+
 /*no logging is useful when time and fprintf are mocked*/
 #ifdef NO_LOGGING
 #define LOG(...)
@@ -64,9 +66,9 @@ typedef void(*LOGGER_LOG_GETLASTERROR)(const char* file, const char* func, int l
 #define LogErrorWinHTTPWithGetLastErrorAsString(...)
 #define UNUSED(x) (void)(x)
 #elif (defined MINIMAL_LOGERROR)
-#define LOG(...)
-#define LogInfo(...)
-#define LogBinary(...)
+#define LOG(...) printf("log %s: line %d\n",__FILE__,__LINE__);
+#define LogInfo(...) printf("info %s: line %d\n",__FILE__,__LINE__);
+#define LogBinary(...) printf("binary %s: line %d\n",__FILE__,__LINE__);
 #define LogError(...) printf("error %s: line %d\n",__FILE__,__LINE__);
 #define xlogging_get_log_function() NULL
 #define xlogging_set_log_function(...)

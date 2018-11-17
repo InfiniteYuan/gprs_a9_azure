@@ -1,4 +1,4 @@
-DEFAULT_BLD             := src/configs/config.ubuntu.x86
+DEFAULT_BLD             := src/configs/config.Ai_Thinker.gprs_a9
 POST_FINAL_OUT_HOOK     := Post_Distro
 SUBDIRS                 := directory-not-exist-actually
 
